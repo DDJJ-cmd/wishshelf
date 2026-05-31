@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0c0c0e">
+<link rel="manifest" href="./manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WishShelf">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<title>WISHSHELF</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0c0c0e; --bg2:#141417; --line:#26262b;
+    --txt:#f3f1ec; --mut:#86858c; --accent:#e8b04b; --danger:#d9685e;
+    --sans:"Zen Kaku Gothic New",sans-serif;
+    --serif:"Fraunces",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{background:var(--bg);color:var(--txt);font-family:var(--sans);
+    padding-bottom:env(safe-area-inset-bottom);overscroll-behavior-y:none}
+  header{position:sticky;top:0;z-index:30;background:rgba(12,12,14,.82);
+    backdrop-filter:blur(16px);border-bottom:1px solid var(--line);
+    padding:calc(env(safe-area-inset-top) + 16px) 18px 12px}
+  .brand{display:flex;align-items:baseline;gap:10px}
+  .brand h1{font-family:var(--serif);font-weight:600;font-size:25px;letter-spacing:.5px;font-style:italic}
+  .brand span{color:var(--mut);font-size:11px;letter-spacing:3px;text-transform:uppercase}
+  .tabs{display:flex;gap:8px;overflow-x:auto;padding:14px 18px 4px;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{flex:0 0 auto;padding:7px 15px;border:1px solid var(--line);border-radius:100px;
+    background:transparent;color:var(--mut);font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;transition:.2s}
+  .tab.on{background:var(--txt);color:#0c0c0e;border-color:var(--txt)}
+  .budget{padding:12px 18px 2px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .budget .lab{font-size:11px;color:var(--mut);letter-spacing:1px;text-transform:uppercase}
+  .budget b{font-family:var(--serif);font-style:italic;color:var(--accent);font-size:22px;line-height:1}
+  .budget .sub{font-size:11.5px;color:var(--mut)}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding:14px 3px 120px}
+  .cell{position:relative;aspect-ratio:1;overflow:hidden;background:var(--bg2);cursor:pointer}
+  .cell img{width:100%;height:100%;object-fit:cover;display:block;transition:.35s}
+  .cell:active img{transform:scale(.97)}
+  .cell .ph{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:8px;color:var(--mut);font-size:11px;text-align:center;padding:10px}
+  .cell .ph b{font-family:var(--serif);font-size:15px;color:var(--txt);font-style:italic}
+  .cell .cat-dot{position:absolute;top:7px;left:7px;font-size:9.5px;font-weight:700;
+    background:rgba(0,0,0,.55);backdrop-filter:blur(4px);padding:3px 8px;border-radius:100px;letter-spacing:.5px}
+  .cell .price{position:absolute;bottom:7px;left:7px;font-size:10.5px;font-weight:700;color:#fff;
+    background:rgba(0,0,0,.62);backdrop-filter:blur(4px);padding:3px 8px;border-radius:100px}
+  .empty{grid-column:1/-1;text-align:center;color:var(--mut);padding:80px 30px;line-height:1.9;font-size:14px}
+  .empty b{font-family:var(--serif);font-style:italic;font-size:20px;color:var(--txt);display:block;margin-bottom:10px}
+  .fab{position:fixed;right:20px;bottom:calc(env(safe-area-inset-bottom) + 22px);z-index:40;
+    width:60px;height:60px;border-radius:50%;border:none;background:var(--accent);color:#0c0c0e;
+    font-size:30px;font-weight:300;box-shadow:0 8px 30px rgba(232,176,75,.35);cursor:pointer;line-height:1}
+  .scrim{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.6);backdrop-filter:blur(3px);
+    display:none;align-items:flex-end;justify-content:center}
+  .scrim.show{display:flex}
+  .sheet{width:100%;max-width:520px;max-height:88vh;overflow-y:auto;background:var(--bg2);border:1px solid var(--line);
+    border-radius:26px 26px 0 0;padding:26px 22px calc(env(safe-area-inset-bottom) + 30px);
+    animation:up .28s cubic-bezier(.2,.9,.3,1)}
+  @keyframes up{from{transform:translateY(40px);opacity:.4}to{transform:translateY(0);opacity:1}}
+  .sheet h2{font-family:var(--serif);font-style:italic;font-weight:600;font-size:21px;margin-bottom:6px}
+  label{display:block;font-size:11px;color:var(--mut);letter-spacing:1.5px;text-transform:uppercase;margin:16px 0 7px}
+  input[type=text]{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:13px;
+    padding:14px;color:var(--txt);font-family:var(--sans);font-size:15px}
+  input:focus{outline:none;border-color:var(--accent)}
+  .catpick{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{padding:8px 14px;border:1px solid var(--line);border-radius:100px;font-size:13px;cursor:pointer;color:var(--mut);transition:.15s}
+  .chip.on{background:var(--accent);color:#0c0c0e;border-color:var(--accent);font-weight:700}
+  .chip.add{border-style:dashed}
+  .btn{width:100%;margin-top:22px;padding:16px;border:none;border-radius:14px;background:var(--txt);
+    color:#0c0c0e;font-family:var(--sans);font-weight:700;font-size:15px;cursor:pointer}
+  .btn:disabled{opacity:.4}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--txt);margin-top:10px}
+  .btn.del{background:transparent;border:1px solid var(--danger);color:var(--danger)}
+  .preview{display:flex;gap:14px;align-items:center;margin-top:14px;padding:12px;background:var(--bg);border-radius:14px;border:1px solid var(--line)}
+  .preview img{width:64px;height:64px;border-radius:10px;object-fit:cover;flex:0 0 auto;background:var(--bg2)}
+  .preview .noimg{width:64px;height:64px;border-radius:10px;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--mut);flex:0 0 auto;text-align:center}
+  .preview .t{font-size:14px;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .preview .d{font-size:11px;color:var(--mut);margin-top:4px}
+  .cands{display:flex;gap:8px;overflow-x:auto;padding:4px 0 2px;scrollbar-width:none}
+  .cands::-webkit-scrollbar{display:none}
+  .cands img{width:62px;height:62px;border-radius:10px;object-fit:cover;flex:0 0 auto;border:2px solid transparent;cursor:pointer}
+  .cands img.on{border-color:var(--accent)}
+  .spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.25);
+    border-top-color:var(--txt);border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .hint{font-size:11.5px;color:var(--mut);margin-top:8px;line-height:1.7}
+  .morebtn{margin-top:12px;font-size:12.5px;color:var(--accent);cursor:pointer;letter-spacing:.5px}
+  .detail-img{width:100%;border-radius:16px;aspect-ratio:1;object-fit:cover;background:var(--bg)}
+  .detail-meta{margin:16px 0}
+  .detail-meta .dt{font-size:11px;color:var(--mut);letter-spacing:1px}
+  .detail-meta .tt{font-family:var(--serif);font-size:18px;line-height:1.4;margin-top:6px}
+  .detail-meta .pr{font-family:var(--serif);font-style:italic;color:var(--accent);font-size:20px;margin-top:8px}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><h1>WishShelf</h1><span>欲しいもの棚</span></div>
+</header>
+<div class="tabs" id="tabs"></div>
+<div class="budget" id="budget"></div>
+<div class="grid" id="grid"></div>
+<button class="fab" id="fab">+</button>
+
+<div class="scrim" id="addScrim">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <h2>URLを貼る</h2>
+    <input type="text" id="urlIn" placeholder="https://..." autocomplete="off" inputmode="url">
+    <div id="previewBox"></div>
+    <div class="morebtn" id="moreBtn" onclick="toggleMore()">▸ 画像を変える / 候補から選ぶ</div>
+    <div id="moreBox" style="display:none">
+      <div id="candWrap" style="display:none">
+        <label>画像の候補（タップで選ぶ）</label>
+        <div class="cands" id="cands"></div>
+      </div>
+      <label>画像URL（手動で差し替え）</label>
+      <input type="text" id="imgIn" placeholder="https://....jpg / .png" autocomplete="off">
+      <p class="hint">綺麗な商品画像にしたいときは、Safariでその画像を長押し →「画像のアドレスをコピー」→ ここに貼り付け。</p>
+    </div>
+    <label>価格（任意・¥）</label>
+    <input type="text" id="priceIn" placeholder="例) 12800" inputmode="numeric" autocomplete="off">
+    <label>カテゴリ</label>
+    <div class="catpick" id="catPick"></div>
+    <button class="btn" id="saveBtn" disabled>棚に追加</button>
+  </div>
+</div>
+
+<div class="scrim" id="detScrim">
+  <div class="sheet" onclick="event.stopPropagation()" id="detBody"></div>
+</div>
+
+<script>
+const STORE_KEY = "wishshelf-v1";
+// ↓ Cloudflare Workerを公開したら、そのURLをここに貼る（金額＆綺麗な画像の自動取得が有効になる）
+//   例: const FETCH_API = "https://wishshelf-fetch.jsmgoo11185.workers.dev";
+const FETCH_API = "https://wishshelf-fetch.jsmgoo11185.workers.dev";
+const DEFAULT_CATS = ["ガジェット","機械部品","レシピ","車","本","インテリア","服","その他"];
+let state = { items: [], categories: [...DEFAULT_CATS] };
+let activeFilter = "ALL";
+let draft = { url:"", title:"", image:"", domain:"", category:"", price:null };
+
+/* ---------- storage: window.storage -> localStorage -> memory ---------- */
+const Store = {
+  async get(k){
+    try{ const r=await window.storage.get(k); if(r&&r.value!=null) return r.value; }catch(e){}
+    try{ const v=localStorage.getItem(k); if(v!=null) return v; }catch(e){}
+    return null;
+  },
+  async set(k,v){ let ok=false;
+    try{ await window.storage.set(k,v); ok=true; }catch(e){}
+    try{ localStorage.setItem(k,v); ok=true; }catch(e){}
+    return ok;
+  }
+};
+async function load(){
+  const raw=await Store.get(STORE_KEY);
+  if(raw){ try{ state=JSON.parse(raw); }catch(e){} }
+  if(!state.categories||!state.categories.length) state.categories=[...DEFAULT_CATS];
+  if(!state.items) state.items=[];
+}
+async function save(){ await Store.set(STORE_KEY, JSON.stringify(state)); }
+
+/* ---------- helpers ---------- */
+function absUrl(u){ let a=u.trim(); if(!/^https?:\/\//.test(a)) a="https://"+a; return a; }
+function domainOf(u){ try{ return new URL(u).hostname.replace(/^www\./,""); }catch(e){ return ""; } }
+function parseYen(s){ if(s==null) return null; const n=parseInt(String(s).replace(/[^\d]/g,""),10); return isNaN(n)?null:n; }
+function fmtYen(n){ return "¥"+Number(n).toLocaleString("ja-JP"); }
+
+/* ---------- metadata fetch ---------- */
+let lastCandidates=[];
+async function fetchViaMicrolink(abs){
+  try{
+    const res=await fetch(`https://api.microlink.io/?url=${encodeURIComponent(abs)}`,{signal:AbortSignal.timeout(10000)});
+    const j=await res.json();
+    if(j&&j.status==="success"&&j.data){
+      return { title:j.data.title||"", image:(j.data.image&&j.data.image.url)||(j.data.logo&&j.data.logo.url)||"" };
+    }
+  }catch(e){}
+  return null;
+}
+const PROXIES=[ u=>`https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+                u=>`https://corsproxy.io/?url=${encodeURIComponent(u)}` ];
+function metaFrom(doc,prop){ const el=doc.querySelector(`meta[property="${prop}"]`)||doc.querySelector(`meta[name="${prop}"]`); return el?el.getAttribute("content"):""; }
+function fixUrl(src,base){ if(!src) return ""; if(src.startsWith("//")) return "https:"+src;
+  if(src.startsWith("/")){ try{ return new URL(src,base).href; }catch(e){ return ""; } } return src; }
+function priceFromLd(o){
+  if(!o) return null;
+  let off=o.offers; if(!off) return null;
+  off=Array.isArray(off)?off[0]:off;
+  return parseYen(off.price||off.lowPrice||(off.priceSpecification&&off.priceSpecification.price));
+}
+async function fetchViaProxy(abs){
+  for(const p of PROXIES){
+    try{
+      const res=await fetch(p(abs),{signal:AbortSignal.timeout(9000)});
+      if(!res.ok) continue;
+      const html=await res.text();
+      const doc=new DOMParser().parseFromString(html,"text/html");
+      const cands=[]; let price=null;
+      const og=fixUrl(metaFrom(doc,"og:image"),abs); if(og) cands.push(og);
+      const tw=fixUrl(metaFrom(doc,"twitter:image")||metaFrom(doc,"twitter:image:src"),abs); if(tw) cands.push(tw);
+      const ogp=parseYen(metaFrom(doc,"product:price:amount")); if(ogp) price=ogp;
+      doc.querySelectorAll('script[type="application/ld+json"]').forEach(s=>{
+        try{ const d=JSON.parse(s.textContent); const arr=Array.isArray(d)?d:[d];
+          arr.forEach(o=>{ let im=o&&o.image;
+            if(im){ if(typeof im==="string") cands.push(fixUrl(im,abs));
+              else if(Array.isArray(im)) im.forEach(x=>cands.push(fixUrl(typeof x==="string"?x:(x&&x.url),abs)));
+              else if(im.url) cands.push(fixUrl(im.url,abs)); }
+            if(price==null){ const pp=priceFromLd(o); if(pp) price=pp; } });
+        }catch(e){}
+      });
+      doc.querySelectorAll("img").forEach(im=>{
+        let s=im.getAttribute("src")||im.getAttribute("data-src")||"";
+        const ss=im.getAttribute("srcset"); if(ss) s=ss.split(",").pop().trim().split(" ")[0]||s;
+        s=fixUrl(s,abs);
+        if(s&&/^https?:/.test(s)&&!/sprite|icon|logo|blank|1x1|spacer|\.svg(\?|$)/i.test(s)) cands.push(s);
+      });
+      const title=metaFrom(doc,"og:title")||(doc.querySelector("title")?.textContent||"").trim();
+      return { title, image:[...new Set(cands)][0]||"", candidates:[...new Set(cands.filter(Boolean))].slice(0,12), price };
+    }catch(e){}
+  }
+  return null;
+}
+async function fetchViaApi(abs){
+  if(!FETCH_API) return null;
+  try{
+    const res=await fetch(`${FETCH_API}?url=${encodeURIComponent(abs)}`,{signal:AbortSignal.timeout(12000)});
+    if(!res.ok) return null;
+    const j=await res.json(); if(j.error) return null;
+    return { title:j.title||"", image:j.image||"", price:(j.price!=null?j.price:null), candidates:j.images||[] };
+  }catch(e){ return null; }
+}
+async function fetchMeta(url){
+  const abs=absUrl(url), domain=domainOf(abs);
+  let title="",image="",candidates=[],price=null;
+  // 1) 自前Worker（最優先・金額もここで取れる）
+  const api=await fetchViaApi(abs);
+  if(api){ title=api.title; image=api.image; price=api.price; candidates=[...(api.candidates||[])]; }
+  // 2) Worker未設定/失敗時のフォールバック（microlink → CORSプロキシ解析）
+  if(!api){
+    const m=await fetchViaMicrolink(abs);
+    if(m){ title=m.title; image=m.image; if(image) candidates.push(image); }
+    const px=await fetchViaProxy(abs);
+    if(px){ if(!title) title=px.title; if(!image) image=px.image||""; if(price==null) price=px.price||null;
+      candidates=[...new Set([...candidates,...(px.candidates||[])])]; }
+  }
+  return { title, image, domain, candidates:candidates.slice(0,12), price };
+}
+
+/* ---------- render ---------- */
+function allCats(){ const f=[...new Set(state.items.map(i=>i.category).filter(Boolean))]; return [...new Set([...state.categories,...f])]; }
+function renderTabs(){
+  const tabs=["ALL",...allCats()];
+  document.getElementById("tabs").innerHTML=tabs.map(c=>
+    `<button class="tab ${activeFilter===c?'on':''}" onclick="setFilter('${c.replace(/'/g,"\\'")}')">${c==='ALL'?'すべて':c}</button>`).join("");
+}
+function setFilter(c){ activeFilter=c; renderTabs(); renderGrid(); }
+function fmtDate(ts){ const d=new Date(ts); return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`; }
+function currentItems(){
+  let items=state.items.slice().sort((a,b)=>b.dateAdded-a.dateAdded);
+  if(activeFilter!=="ALL") items=items.filter(i=>i.category===activeFilter);
+  return items;
+}
+function renderBudget(){
+  const items=currentItems(); const b=document.getElementById("budget");
+  if(!items.length){ b.innerHTML=""; return; }
+  const priced=items.filter(i=>i.price!=null && i.price>0);
+  const total=priced.reduce((s,i)=>s+i.price,0);
+  const unset=items.length-priced.length;
+  b.innerHTML=`<span class="lab">${activeFilter==='ALL'?'全部揃えると':activeFilter+'を揃えると'}</span>
+    <b>${fmtYen(total)}</b>
+    <span class="sub">${items.length}点${unset?` ・ 価格未設定 ${unset}`:''}</span>`;
+}
+function renderGrid(){
+  const grid=document.getElementById("grid"); const items=currentItems();
+  renderBudget();
+  if(!items.length){ grid.innerHTML=`<div class="empty"><b>棚はまだ空です</b>右下の ＋ からURLを貼って、欲しいもの・やりたいことを並べていきましょう。</div>`; return; }
+  grid.innerHTML=items.map(it=>{
+    const inner=it.image
+      ? `<img src="${it.image}" loading="lazy" onerror="this.replaceWith(phNode('${(it.domain||'').replace(/'/g,'')}'))">`
+      : `<div class="ph"><b>${(it.domain||'LINK').slice(0,14)}</b>画像なし</div>`;
+    return `<div class="cell" onclick="openDetail('${it.id}')">
+      ${it.category?`<span class="cat-dot">${it.category}</span>`:''}
+      ${(it.price!=null&&it.price>0)?`<span class="price">${fmtYen(it.price)}</span>`:''}
+      ${inner}</div>`;
+  }).join("");
+}
+function phNode(domain){ const d=document.createElement("div"); d.className="ph"; d.innerHTML=`<b>${(domain||'LINK').slice(0,14)}</b>画像なし`; return d; }
+
+/* ---------- add flow ---------- */
+const addScrim=document.getElementById("addScrim"),urlIn=document.getElementById("urlIn"),
+  imgIn=document.getElementById("imgIn"),priceIn=document.getElementById("priceIn"),
+  previewBox=document.getElementById("previewBox"),candWrap=document.getElementById("candWrap"),
+  candsEl=document.getElementById("cands"),saveBtn=document.getElementById("saveBtn");
+
+document.getElementById("fab").onclick=openAdd;
+addScrim.onclick=()=>closeScrim(addScrim);
+document.getElementById("detScrim").onclick=()=>closeScrim(document.getElementById("detScrim"));
+function closeScrim(s){ s.classList.remove("show"); }
+
+function openAdd(){
+  draft={url:"",title:"",image:"",domain:"",category:state.categories[0]||"",price:null};
+  lastCandidates=[]; urlIn.value=""; imgIn.value=""; priceIn.value=""; previewBox.innerHTML="";
+  candWrap.style.display="none"; saveBtn.disabled=true;
+  document.getElementById("moreBox").style.display="none";
+  document.getElementById("moreBtn").textContent="▸ 画像を変える / 候補から選ぶ";
+  renderCatPick(); addScrim.classList.add("show"); setTimeout(()=>urlIn.focus(),250);
+}
+function toggleMore(){ const b=document.getElementById("moreBox"),t=document.getElementById("moreBtn");
+  const open=b.style.display==="none"; b.style.display=open?"block":"none";
+  t.textContent=(open?"▾":"▸")+" 画像を変える / 候補から選ぶ"; }
+let fetchTimer=null;
+function shotUrl(u){ return `https://image.thum.io/get/width/800/crop/800/noanimate/${absUrl(u)}`; }
+urlIn.oninput=()=>{
+  clearTimeout(fetchTimer); const v=urlIn.value.trim();
+  if(!/^https?:\/\/|\w+\.\w+/.test(v)){ previewBox.innerHTML=""; candWrap.style.display="none"; saveBtn.disabled=true; return; }
+  // 1) まずスクショ画像を即セット（探さない＝必ず何か出る）
+  const shot=shotUrl(v);
+  draft.url=v; draft.domain=domainOf(absUrl(v)); draft.title=draft.domain;
+  draft.image=shot; lastCandidates=[shot]; imgIn.value=shot;
+  renderPreview(); renderCands(); saveBtn.disabled=false;
+  // 2) 裏で og:image / 価格を探し、取れたら綺麗な画像に格上げ
+  fetchTimer=setTimeout(async()=>{
+    const m=await fetchMeta(v);
+    if(m.title) draft.title=m.title;
+    if(m.image) draft.image=m.image;
+    if(m.price){ draft.price=m.price; priceIn.value=m.price; }
+    lastCandidates=[...new Set([m.image,...(m.candidates||[]),shot].filter(Boolean))];
+    imgIn.value=draft.image||shot;
+    renderPreview(); renderCands();
+  },500);
+};
+imgIn.oninput=()=>{ draft.image=imgIn.value.trim(); renderPreview(); markCand(); };
+priceIn.oninput=()=>{ draft.price=parseYen(priceIn.value); };
+function renderPreview(){
+  previewBox.innerHTML=`<div class="preview">
+    ${draft.image?`<img src="${draft.image}" onerror="this.outerHTML='<div class=\\'noimg\\'>読込失敗</div>'">`:`<div class="noimg">画像なし</div>`}
+    <div><div class="t">${draft.title||draft.domain||'(タイトル取得できず)'}</div><div class="d">${draft.domain}</div></div></div>`;
+}
+function renderCands(){
+  if(!lastCandidates.length){ candWrap.style.display="none"; return; }
+  candWrap.style.display="block";
+  candsEl.innerHTML=lastCandidates.map(u=>`<img src="${u}" class="${u===draft.image?'on':''}" onclick="pickImg('${u.replace(/'/g,"\\'")}')" onerror="this.remove()">`).join("");
+}
+function markCand(){ [...candsEl.children].forEach(c=>c.classList.toggle("on",c.getAttribute("src")===draft.image)); }
+function pickImg(u){ draft.image=u; imgIn.value=u; renderPreview(); markCand(); }
+function renderCatPick(){
+  document.getElementById("catPick").innerHTML=state.categories.map(c=>
+    `<span class="chip ${draft.category===c?'on':''}" onclick="pickCat('${c.replace(/'/g,"\\'")}')">${c}</span>`).join("")
+    +`<span class="chip add" onclick="addCat()">＋ 新規</span>`;
+}
+function pickCat(c){ draft.category=c; renderCatPick(); }
+function addCat(){ const n=prompt("新しいカテゴリ名"); if(!n) return; const t=n.trim(); if(!t) return;
+  if(!state.categories.includes(t)) state.categories.push(t); draft.category=t; save(); renderCatPick(); }
+saveBtn.onclick=async()=>{
+  if(!draft.url) return;
+  state.items.push({ id:"i"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+    url:absUrl(draft.url), title:draft.title, image:draft.image, domain:draft.domain,
+    category:draft.category, price:draft.price, dateAdded:Date.now() });
+  await save(); closeScrim(addScrim); renderTabs(); renderGrid();
+};
+
+/* ---------- detail ---------- */
+function openDetail(id){
+  const it=state.items.find(x=>x.id===id); if(!it) return;
+  document.getElementById("detBody").innerHTML=`
+    ${it.image?`<img class="detail-img" src="${it.image}" onerror="this.style.opacity=.2">`
+      :`<div class="detail-img" style="display:flex;align-items:center;justify-content:center;color:var(--mut)">画像なし</div>`}
+    <div class="detail-meta"><div class="dt">追加日 ${fmtDate(it.dateAdded)} ・ ${it.domain||''}</div>
+      <div class="tt">${it.title||it.url}</div>
+      ${(it.price!=null&&it.price>0)?`<div class="pr">${fmtYen(it.price)}</div>`:''}</div>
+    <label>価格（¥）</label>
+    <input type="text" id="priceFix" inputmode="numeric" placeholder="例) 12800" value="${it.price!=null?it.price:''}">
+    <label>画像URLを差し替える</label>
+    <input type="text" id="imgFix" placeholder="https://....jpg" value="${(it.image||'').replace(/"/g,'&quot;')}">
+    <label>カテゴリ</label>
+    <div class="catpick">${state.categories.map(c=>
+      `<span class="chip ${it.category===c?'on':''}" onclick="changeCat('${it.id}','${c.replace(/'/g,"\\'")}')">${c}</span>`).join("")}</div>
+    <button class="btn" onclick="applyChanges('${it.id}')">変更を保存</button>
+    <button class="btn ghost" onclick="window.open('${it.url}','_blank')">元のページを開く ↗</button>
+    <button class="btn del" onclick="removeItem('${it.id}')">棚から削除</button>`;
+  document.getElementById("detScrim").classList.add("show");
+}
+async function changeCat(id,c){ const it=state.items.find(x=>x.id===id); if(it){ it.category=c; await save(); openDetail(id); renderTabs(); renderGrid(); } }
+async function applyChanges(id){
+  const it=state.items.find(x=>x.id===id); if(!it) return;
+  it.image=document.getElementById("imgFix").value.trim();
+  it.price=parseYen(document.getElementById("priceFix").value);
+  await save(); closeScrim(document.getElementById("detScrim")); renderTabs(); renderGrid();
+}
+async function removeItem(id){ if(!confirm("この欲しいものを削除しますか？")) return;
+  state.items=state.items.filter(x=>x.id!==id); await save();
+  closeScrim(document.getElementById("detScrim")); renderTabs(); renderGrid(); }
+
+/* ---------- share target (deploy時に有効) ---------- */
+(function(){
+  const p=new URLSearchParams(location.search);
+  let shared=p.get("url")||""; const text=p.get("text")||""; const ttl=p.get("title")||"";
+  if(!shared && text){ const m=text.match(/https?:\/\/[^\s]+/); shared=m?m[0]:text.trim(); }
+  if(shared){ load().then(()=>{ boot(); openAdd(); if(ttl) draft.title=ttl;
+    urlIn.value=shared; urlIn.dispatchEvent(new Event("input"));
+    history.replaceState(null,"",location.pathname); }); return; }
+  load().then(boot);
+})();
+function boot(){ renderTabs(); renderGrid(); }
+if("serviceWorker" in navigator){ window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{})); }
+</script>
+</body>
+</html>
